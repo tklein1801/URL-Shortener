@@ -15,6 +15,14 @@
 
 ## API
 
+### Get the list of short URLs
+
+> GET /list
+
+```bash
+curl http://localhost:3000/list?code=<AUTH_CODE>
+```
+
 ### Create a new short URL
 
 > POST /shorten
@@ -29,7 +37,7 @@ curl -X POST http://localhost:3000/shorten \
 > GET /r/:shortUrl
  
 ```bash
-curl http://localhost:3000/r/:shortUrl
+curl http://localhost:3000/r/:shortUrl?code=<AUTH_CODE>
 ```
 
 ### Delete a short URL

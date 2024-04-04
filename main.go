@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -19,13 +20,15 @@ import (
 )
 
 var ctx = context.Background()
+var authCode string
 
 func main() {
-	missingEnvVars := CheckForEnvironmentVariables([]string{"REDIS_HOST", "REDIS_PW", "REDIS_DB"})
+	missingEnvVars := CheckForEnvironmentVariables([]string{"REDIS_HOST", "REDIS_PW", "REDIS_DB", "CODE"})
 	if len(missingEnvVars) > 0 {
 		log.Fatalf("Missing environment variables: %v", missingEnvVars)
 	}
 
+	authCode = os.Getenv("CODE")
 	redisDbNum, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 	if err != nil {
 		log.Fatalf("Error parsing REDIS_DB: %v", err)
@@ -38,7 +41,44 @@ func main() {
 	})
 
 	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Heartbeat("/health"))
+
+	r.Get("/list", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		if code != authCode {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		keys, _, err := rdb.Scan(ctx, 0, "*", 0).Result()
+		if err != nil {
+			panic(err)
+		}
+
+		data := make(map[string]string)
+		for _, key := range keys {
+			value, err := rdb.Get(ctx, key).Result()
+			if err != nil {
+				panic(err)
+			}
+			data[key] = value
+		}
+
+		jsonData, err := json.Marshal(map[string]interface{}{"data": data})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(jsonData)
+		if err != nil {
+			panic(err)
+		}
+	})
 
 	r.Post("/shorten", func(w http.ResponseWriter, r *http.Request) {
 		originalUrl := r.FormValue("url")
@@ -53,7 +93,16 @@ func main() {
 			panic(err)
 		}
 
-		w.Write([]byte(shortUrl))
+		jsonData, err := json.Marshal(map[string]string{"shortUrl": shortUrl})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(jsonData)
+		if err != nil {
+			panic(err)
+		}
 	})
 
 	r.Get("/r/{shortUrl}", func(w http.ResponseWriter, r *http.Request) {
@@ -77,6 +126,12 @@ func main() {
 	})
 
 	r.Delete("/d/{shortUrl}", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+		if code != authCode {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		shortUrl := chi.URLParam(r, "shortUrl")
 		if shortUrl == "" {
 			http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -88,7 +143,17 @@ func main() {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
 		}
-		w.Write([]byte("Deleted"))
+
+		jsonData, err := json.Marshal(map[string]string{"shortUrl": shortUrl})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(jsonData)
+		if err != nil {
+			panic(err)
+		}
 	})
 
 	port := os.Getenv("PORT")
