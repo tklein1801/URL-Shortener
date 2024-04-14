@@ -1,6 +1,8 @@
 # Golang URL shortener
 
-## Getting started
+## Server
+
+### Getting started
 
 > [!NOTE]
 > In order to run this application, you need to have a working Redis instance running.
@@ -8,14 +10,14 @@
 1. Clone the repository
 2. Set all required environment variables (as defined in `.env.example`)
 3. Start your application
-    ```bash
-    go run main.go
-    ```
+   ```bash
+   go run main.go
+   ```
 4. Open your browser and go to `http://localhost:3000/`
 
-## API
+### API
 
-### Get the list of short URLs
+#### Get the list of short URLs
 
 > GET /list
 
@@ -23,7 +25,7 @@
 curl http://localhost:3000/list?code=<AUTH_CODE>
 ```
 
-### Create a new short URL
+#### Create a new short URL
 
 > POST /shorten
 
@@ -32,18 +34,20 @@ curl -X POST http://localhost:3000/shorten \
     -d 'url=https://www.google.com'
 ```
 
-### Get a short URL
+#### Get a short URL
 
 > GET /r/:shortUrl
- 
+
 ```bash
 curl http://localhost:3000/r/:shortUrl?code=<AUTH_CODE>
 ```
 
-### Delete a short URL
+#### Delete a short URL
 
 > DELETE /d/:shortUrl
 
 ```bash
 curl -X DELETE http://localhost:3000/d/:shortUrl
 ```
+
+## CLI
