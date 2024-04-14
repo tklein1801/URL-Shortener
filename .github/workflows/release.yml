@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/cli/main.go'
+
+env:
+  GO_VERSION: 1.21.0
+
+jobs:
+  build-and-upload-artifacts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64, arm]
+        exclude:
+          - goos: darwin
+            goarch: arm
+          - goos: windows
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Build for ${{ matrix.goos }} ${{ matrix.goarch }}
+        run: |
+          cd apps/cli
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o surl_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} ./...
+          mkdir -p artifacts
+          cp surl_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} artifacts/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: surl_${{ matrix.goos }}_${{ matrix.goarch }}
+          path: apps/cli/artifacts/surl_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+
+  prepare-and-release:
+    needs: build-and-upload-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Tag Name and Create Tag
+        id: generate_tag
+        run: |
+          TAG_NAME=$(date +'%Y%m%d%H%M')
+          echo "Generated tag: $TAG_NAME"
+          echo "::set-output name=tag::$TAG_NAME"
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git tag -a $TAG_NAME -m "chore(release): $TAG_NAME"
+          git push origin $TAG_NAME
+
+      - uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        with:
+          tag_name: ${{ steps.generate_tag.outputs.tag }}
+          release_name: Release ${{ steps.generate_tag.outputs.tag }}
+          draft: false
+          prerelease: false
+
+      - name: check something
+        run: |
+          ls -l
+          ls -l artifacts
+          zip -r artifacts.zip artifacts
+          ls -l
+
+      - name: Upload Artifacts to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/surl_*
+          fail_on_unmatched_files: true
+          tag_name: ${{ steps.generate_tag.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
