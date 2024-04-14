@@ -7,13 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -166,6 +167,7 @@ func main() {
 		log.Fatalf("Invalid port number: %v", err)
 	}
 
+	log.Printf("Starting server under http://localhost:%s", port)
 	err = http.ListenAndServe(fmt.Sprintf(":%s", port), r)
 	if err != nil {
 		log.Fatalf("Server failed to start on port %s: %v", port, err)
@@ -181,7 +183,7 @@ func FileExists(path string) bool {
 }
 
 func CheckForEnvironmentVariables(variables []string) []string {
-	if FileExists(".env") == true {
+	if FileExists(".env") {
 		err := godotenv.Load(".env")
 		if err != nil {
 			log.Fatal("Error loading .env file")

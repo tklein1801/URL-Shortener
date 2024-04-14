@@ -1,5 +1,15 @@
 # Golang URL shortener
 
+- [Golang URL shortener](#golang-url-shortener)
+  - [Server](#server)
+    - [Getting started](#getting-started)
+    - [API](#api)
+      - [Get the list of short URLs](#get-the-list-of-short-urls)
+      - [Create a new short URL](#create-a-new-short-url)
+      - [Get a short URL](#get-a-short-url)
+      - [Delete a short URL](#delete-a-short-url)
+  - [CLI](#cli)
+
 ## Server
 
 ### Getting started
