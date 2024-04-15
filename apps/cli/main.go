@@ -32,7 +32,7 @@ var rootCmd = &cobra.Command{
 	Short: "SURL is a command line interface for shortening long URLs",
 	Long:  `SURL is a command line interface that allows you to shorten long URLs and manage them easily.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello, World!")
+		cmd.Help()
 	},
 }
 
