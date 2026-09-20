@@ -1,0 +1,5 @@
+instance_pipeline_name: url-shortener-branches
+repo_owner: tklein1801
+repo_name: url-shortener
+git:
+  uri: git@github.com:tklein1801/url-shortener.git

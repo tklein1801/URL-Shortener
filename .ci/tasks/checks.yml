@@ -1,0 +1,31 @@
+platform: linux
+user: "65532"
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: "1.27.1"
+
+inputs:
+  - name: repo
+
+run:
+  path: sh
+  args:
+    - -eu
+    - -c
+    - |
+      export HOME=/tmp/home
+      export GOCACHE=/tmp/go-build
+      export GOMODCACHE=/tmp/go-mod
+      mkdir -p "$HOME" "$GOCACHE" "$GOMODCACHE"
+      cd repo
+      find apps/server apps/cli -type f -name '*.go' -print | while IFS= read -r file; do
+        normalized="/tmp/gofmt-$(printf '%s' "$file" | tr '/\\' '__')"
+        tr -d '\r' < "$file" > "$normalized"
+        diff="$(gofmt -d "$normalized")"
+        test -z "$diff"
+      done
+      go vet ./apps/server/... ./apps/cli/...
+      go test -race -count=1 ./apps/server/... ./apps/cli/...

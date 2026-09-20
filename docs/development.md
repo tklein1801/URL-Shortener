@@ -51,18 +51,14 @@ on the target operating system when changing those integrations.
 
 ## CI and releases
 
-CI runs formatting checks, `go vet`, race-enabled tests for both modules, and a
-Docker build. The release workflow runs the same checks before cross-compiling
-Linux, macOS, and Windows binaries for amd64/arm64, plus Linux arm.
+Concourse pipelines under [`.ci/`](../.ci/) run formatting checks, `go vet`,
+race-enabled tests, and both application builds for `main`, `feat/*`,
+`feature/*`, and `fix/*` branches. The main pipeline then cross-compiles the
+CLI for Linux, macOS, and Windows on amd64 and arm64 and publishes a
+deterministic GitHub prerelease for every successful commit.
 
-Push an explicitly chosen `v*` tag to publish a release. The tag is embedded
-using `-ldflags "-X main.version=<tag>"`. A manual workflow dispatch builds
-artifacts with the commit SHA as version but does not publish a release or create
-a tag. Publishing uses the workflow's scoped `GITHUB_TOKEN`; no personal access
-token is needed. Releases include separately named executable artifacts.
-
-Version references: [Go downloads](https://go.dev/dl/),
-[checkout releases](https://github.com/actions/checkout/releases),
-[setup-go releases](https://github.com/actions/setup-go/releases),
-[upload-artifact releases](https://github.com/actions/upload-artifact/releases),
-[download-artifact releases](https://github.com/actions/download-artifact/releases).
+Every successful `main` commit publishes a deterministic prerelease. The version is embedded
+using `-ldflags "-X main.version=<tag>"`. GitHub and webhook credentials are
+provided through the Concourse credential manager. See [`.ci/README.md`](../.ci/README.md)
+for pipeline installation, worker requirements, Vault variables, and release
+operations.
