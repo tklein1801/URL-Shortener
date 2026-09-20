@@ -2,8 +2,10 @@ name: url-shortener
 
 services:
   server:
-    image: ghcr.io/tklein1801/url-shortener-server:latest
-    pull_policy: always
+    image: url-shortener-server:local
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       SQLITE_PATH: /data/links.db

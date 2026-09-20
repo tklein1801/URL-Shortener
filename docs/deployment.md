@@ -51,9 +51,11 @@ For bind mounts, create a dedicated directory owned by UID 10001 with mode
 
 ## Compose upgrades and backups
 
-The included Compose file runs only the server. Its existing `server-token`
-volume name is retained for upgrade compatibility, but the volume now contains
-both `master-token` and `links.db`. The former Redis volume is no longer mounted;
+The included `compose.local.yml` and `compose.yml` files run only the
+server. Both mount the explicitly named `url-shortener-sqlite-data` volume at
+`/data`, so switching between a locally built image and the GHCR image retains
+the same data. The SQLite database is stored at `/data/links.db`; the volume also
+contains `/data/master-token`. The former Redis volume is no longer mounted;
 existing Redis links are not imported or deleted.
 
 For a raw volume backup, stop the server first so SQLite closes and checkpoints

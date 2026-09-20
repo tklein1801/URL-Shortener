@@ -70,33 +70,47 @@ configuration file.
 
 ## Run with Docker Compose
 
-From the repository root:
+Two standalone Compose files are available. To build the server image from the
+local Dockerfile and start it, run from the repository root:
 
 ```bash
-docker compose up --build
+docker compose -f compose.local.yml up --build
 ```
 
-The server is available at `http://localhost:3000`. The SQLite database and
-master token are stored in the `server-token` volume. The historical volume name
-is retained so existing Compose installations keep their master token.
+To run the image published by the latest successful `main` release, use:
+
+```bash
+docker compose -f compose.yml up -d
+```
+
+The server is available at `http://localhost:3000`. Both files use the explicit
+project name `url-shortener` and store `/data/links.db` together with the master
+token in the explicitly named Docker volume `url-shortener-sqlite-data`.
+Switching between the two files therefore keeps the same links and token. You
+can inspect the persisted data volume with:
+
+```bash
+docker volume inspect url-shortener-sqlite-data
+```
 
 Read the initial token from the server logs:
 
 ```bash
-docker compose logs server
+docker compose -f compose.local.yml logs server
 ```
 
-Stop and restart while retaining data with:
+Use the same `-f` argument for subsequent commands. For example, stop and
+restart the registry image while retaining data with:
 
 ```bash
-docker compose down
-docker compose up
+docker compose -f compose.yml down
+docker compose -f compose.yml up -d
 ```
 
-To remove the container, token, and all shortened links, run:
+To remove the containers, token, SQLite database, and all shortened links, run:
 
 ```bash
-docker compose down -v
+docker compose -f compose.yml down -v
 ```
 
 For backups, stop the server and copy the complete volume. Existing Redis data
@@ -107,7 +121,8 @@ is not migrated or used by this version.
 - If port `3000` is already in use, change `PORT` locally or adjust the host side
   of the Compose port mapping.
 - If `/ready` returns `503`, check that `SQLITE_PATH` points to a writable local
-  directory and inspect `docker compose logs server`.
+  directory and inspect `docker compose -f compose.local.yml logs server` (or
+  use `compose.yml` when running the published image).
 - If management commands return an authentication error, configure the token
   printed on the first server start. `config show` always masks it.
 - If the browser cannot be opened by `surl open`, use the redirect URL printed by
