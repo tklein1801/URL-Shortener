@@ -41,7 +41,7 @@ run:
         goarch="$2"
         suffix=""
         test "$goos" != windows || suffix=.exe
-        output="${artifact_dir}/surl_${version}_${goos}_${goarch}${suffix}"
+        output="${artifact_dir}/surl-${goos}-${goarch}${suffix}"
         GOWORK=off CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
           go build -trimpath -ldflags "-s -w -X main.version=${version}" -o "$output" .
       }
@@ -53,7 +53,7 @@ run:
       build_cli windows amd64
       build_cli windows arm64
 
-      (cd "$artifact_dir" && sha256sum surl_* > SHA256SUMS)
+      (cd "$artifact_dir" && sha256sum surl-* > SHA256SUMS)
       printf '%s\n' "$version" > "${metadata_dir}/name"
       printf '%s\n' "$version" > "${metadata_dir}/tag"
       printf '%s\n' "$sha" > "${metadata_dir}/commitish"

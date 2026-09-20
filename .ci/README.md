@@ -32,8 +32,10 @@ and tag are identical, deterministic, and have the form:
 surl-YYYYMMDDTHHMMSSZ-<12-character-commit-sha>
 ```
 
-The release contains six `surl` binaries and `SHA256SUMS`. It also publishes a
-multi-platform server image for `linux/amd64` and `linux/arm64` to:
+The release contains six platform-specific binaries named
+`surl-<platform>-<architecture>` (plus `.exe` on Windows) and `SHA256SUMS`. It
+also publishes a multi-platform server image for `linux/amd64` and
+`linux/arm64` to:
 
 ```text
 ghcr.io/tklein1801/url-shortener-server

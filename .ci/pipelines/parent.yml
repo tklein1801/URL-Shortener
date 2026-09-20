@@ -156,7 +156,7 @@ jobs:
                   commitish: release-metadata/commitish
                   generate_release_notes: true
                   globs:
-                    - artifacts/surl_*
+                    - artifacts/surl-*
                     - artifacts/SHA256SUMS
               - put: server-image
                 inputs: [server-image-build, release-metadata]
