@@ -68,6 +68,16 @@ resources:
       release: false
       pre_release: true
 
+  - name: server-image
+    type: registry-image
+    check_every: never
+    icon: docker
+    source:
+      repository: ghcr.io/((repo_owner))/((repo_name))-server
+      tag: latest
+      username: ((repo_owner))
+      password: ((github.registry_token))
+
   - name: golang
     type: registry-image
     icon: si/go
@@ -127,21 +137,34 @@ jobs:
         input_mapping: { repo: repo }
         params:
           RELEASE_PREFIX: main
-      - put: gh-status
-        inputs: [repo]
-        params:
-          state: pending
-          context: release
-      - put: gh-release
-        inputs: [artifacts, release-metadata]
-        params:
-          name: release-metadata/name
-          tag: release-metadata/tag
-          commitish: release-metadata/commitish
-          generate_release_notes: true
-          globs:
-            - artifacts/surl_*
-            - artifacts/SHA256SUMS
+      - do:
+          - put: gh-status
+            inputs: [repo]
+            params:
+              state: pending
+              context: release
+          - task: build-server-image
+            privileged: true
+            file: repo/.ci/tasks/server-image.yml
+            input_mapping: { repo: repo }
+            output_mapping: { image: server-image-build }
+          - in_parallel:
+              - put: gh-release
+                inputs: [artifacts, release-metadata]
+                params:
+                  name: release-metadata/name
+                  tag: release-metadata/tag
+                  commitish: release-metadata/commitish
+                  generate_release_notes: true
+                  globs:
+                    - artifacts/surl_*
+                    - artifacts/SHA256SUMS
+              - put: server-image
+                inputs: [server-image-build, release-metadata]
+                params:
+                  image: server-image-build/image
+                  additional_tags: release-metadata/tag
+                get_params: { skip_download: true }
         on_success:
           put: gh-status
           inputs: [repo]

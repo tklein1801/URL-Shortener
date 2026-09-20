@@ -11,3 +11,5 @@ github:
   status_token: ((vault:github-status-token))
   # Write repository contents and releases.
   release_token: ((vault:github-release-token))
+  # Write packages in ghcr.io/tklein1801.
+  registry_token: ((vault:github-registry-token))

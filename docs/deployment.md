@@ -2,6 +2,17 @@
 
 ## Docker
 
+Every successful `main` release publishes a server image for Linux amd64 and
+arm64. Pull the newest successful release from GHCR:
+
+```bash
+docker pull ghcr.io/tklein1801/url-shortener-server:latest
+```
+
+For a reproducible deployment, use the immutable release tag shown on the
+corresponding GitHub prerelease. It has the form
+`main-YYYYMMDDTHHMMSSZ-<full-commit-sha>`.
+
 Build from the server directory (or use it as the build context):
 
 ```bash
@@ -21,7 +32,7 @@ docker run -d --name surl-server \
   -e SQLITE_PATH=/data/links.db \
   -e MASTER_TOKEN_FILE=/data/master-token \
   -v surl-data:/data \
-  url-shortener-server
+  ghcr.io/tklein1801/url-shortener-server:latest
 ```
 
 The SQLite database and master token share `/data`. SQLite uses WAL journaling,
