@@ -1,8 +1,9 @@
 resource_types:
   - name: cogito
     type: registry-image
+    check_every: 24h
     source:
-      repository: pix4d/cogito@sha256:a78e2cbc21785efb4a078fd26ae1c2ed2737bb6ee7498d899610fd7b1828fce1
+      repository: pix4d/cogito
 
 resources:
   - name: repo

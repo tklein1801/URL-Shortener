@@ -1,8 +1,9 @@
 resource_types:
   - name: cogito
     type: registry-image
+    check_every: 24h
     source:
-      repository: pix4d/cogito@sha256:a78e2cbc21785efb4a078fd26ae1c2ed2737bb6ee7498d899610fd7b1828fce1
+      repository: pix4d/cogito
   - name: pull-request
     type: registry-image
     source:
@@ -12,7 +13,7 @@ resource_types:
     type: registry-image
     source:
       repository: concourse/github-release-resource
-      tag: '1.14'
+      tag: "1.14"
 
 resources:
   - name: branches
@@ -83,7 +84,7 @@ resources:
     icon: si/go
     source:
       repository: golang
-      tag: '1.27.1'
+      tag: "1.27.1"
 
 jobs:
   - name: set-feature-pipelines
@@ -110,7 +111,7 @@ jobs:
               github_private_key: ((github.private_key))
               status_token: ((github.status_token))
               go_image: golang
-              go_version: '1.27.1'
+              go_version: "1.27.1"
             instance_vars:
               branch: ((.:branch))
 
