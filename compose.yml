@@ -1,0 +1,24 @@
+name: url-shortener
+
+services:
+  server:
+    image: ghcr.io/tklein1801/url-shortener-server:latest
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      SQLITE_PATH: /data/links.db
+      MASTER_TOKEN_FILE: /data/master-token
+      PORT: "3000"
+      HTTP_READ_TIMEOUT: 10s
+      HTTP_WRITE_TIMEOUT: 15s
+      HTTP_IDLE_TIMEOUT: 60s
+      SHUTDOWN_TIMEOUT: 10s
+      BACKEND_TIMEOUT: 5s
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - sqlite-data:/data
+
+volumes:
+  sqlite-data:
+    name: url-shortener-sqlite-data

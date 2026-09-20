@@ -1,63 +1,34 @@
-# Golang URL shortener
+# Go URL Shortener
 
-- [Golang URL shortener](#golang-url-shortener)
-  - [Server](#server)
-    - [Getting started](#getting-started)
-    - [API](#api)
-      - [Get the list of short URLs](#get-the-list-of-short-urls)
-      - [Create a new short URL](#create-a-new-short-url)
-      - [Get a short URL](#get-a-short-url)
-      - [Delete a short URL](#delete-a-short-url)
-  - [CLI](#cli)
+A SQLite-backed HTTP service and the `surl` command-line client, maintained as two
+modules in a Go workspace. Management operations require a bearer master token;
+redirects and health checks are public.
 
-## Server
+## Quick start
 
-### Getting started
+See the [English quick-start guide](docs/quick-start.md) for local server and
+CLI commands, Docker Compose, token setup, and troubleshooting.
 
-> [!NOTE]
-> In order to run this application, you need to have a working Redis instance running.
+## Documentation
 
-1. Clone the repository
-2. Set all required environment variables (as defined in `.env.example`)
-3. Start your application
-   ```bash
-   go run main.go
-   ```
-4. Open your browser and go to `http://localhost:3000/`
+- [Architecture](docs/architecture.md): application layers and persistence adapters
+- [Quick start](docs/quick-start.md): local development and Docker Compose
+- [API](docs/api.md): routes, authentication, schemas, and errors
+- [CLI](docs/cli.md): commands and output examples
+- [Configuration](docs/configuration.md): environment, files, and permissions
+- [Deployment](docs/deployment.md): Docker, SQLite persistence, backups, and HTTPS
+- [Development](docs/development.md): tests, workspace, CI, and releases
 
-### API
+The versioned API replaces the former `/list`, `/shorten`, and `/d/{id}` routes.
+Query-parameter authentication and the old CLI configuration are no longer used.
+Existing Redis entries are not migrated and are no longer read by the server.
 
-#### Get the list of short URLs
-
-> GET /list
+## Validation
 
 ```bash
-curl http://localhost:3000/list?code=<AUTH_CODE>
+go test -race ./apps/server/... ./apps/cli/...
+go vet ./apps/server/... ./apps/cli/...
 ```
 
-#### Create a new short URL
-
-> POST /shorten
-
-```bash
-curl -X POST http://localhost:3000/shorten \
-    -d 'url=https://www.google.com'
-```
-
-#### Get a short URL
-
-> GET /r/:shortUrl
-
-```bash
-curl http://localhost:3000/r/:shortUrl?code=<AUTH_CODE>
-```
-
-#### Delete a short URL
-
-> DELETE /d/:shortUrl
-
-```bash
-curl -X DELETE http://localhost:3000/d/:shortUrl
-```
-
-## CLI
+Tests include SQLite persistence checks, HTTP contract checks, secure
+file handling, isolated CLI commands, and a complete CLI-to-server workflow.

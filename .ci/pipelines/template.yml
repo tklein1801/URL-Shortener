@@ -1,0 +1,73 @@
+resource_types:
+  - name: cogito
+    type: registry-image
+    source:
+      repository: pix4d/cogito@sha256:a78e2cbc21785efb4a078fd26ae1c2ed2737bb6ee7498d899610fd7b1828fce1
+
+resources:
+  - name: repo
+    type: git
+    check_every: 1m
+    icon: git
+    source:
+      uri: ((repo_uri))
+      branch: ((branch))
+      private_key: ((github_private_key))
+
+  - name: gh-status
+    type: cogito
+    check_every: never
+    icon: list-status
+    source:
+      owner: ((repo_owner))
+      repo: ((repo_name))
+      access_token: ((status_token))
+      context_prefix: concourse
+
+  - name: golang
+    type: registry-image
+    icon: si/go
+    source:
+      repository: ((go_image))
+      tag: ((go_version))
+
+jobs:
+  - name: ci
+    public: true
+    serial: true
+    plan:
+      - get: repo
+        trigger: true
+        version: every
+      - get: golang
+      - put: gh-status
+        inputs: [repo]
+        params:
+          state: pending
+          context: ci
+      - task: checks
+        file: repo/.ci/tasks/checks.yml
+        image: golang
+        input_mapping: { repo: repo }
+      - task: build
+        file: repo/.ci/tasks/build.yml
+        image: golang
+        input_mapping: { repo: repo }
+        params:
+          RELEASE_PREFIX: branch
+    on_success:
+      put: gh-status
+      inputs: [repo]
+      params: { state: success, context: ci }
+    on_failure:
+      put: gh-status
+      inputs: [repo]
+      params: { state: failure, context: ci }
+    on_error:
+      put: gh-status
+      inputs: [repo]
+      params: { state: error, context: ci }
+    on_abort:
+      put: gh-status
+      inputs: [repo]
+      params: { state: abort, context: ci }

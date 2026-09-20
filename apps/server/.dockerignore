@@ -1,2 +1,5 @@
-.idea
 .env
+.idea
+data/
+server
+*_test.go

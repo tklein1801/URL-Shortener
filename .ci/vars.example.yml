@@ -1,0 +1,15 @@
+instance_pipeline_name: url-shortener-branches
+repo_owner: tklein1801
+repo_name: url-shortener
+git:
+  uri: git@github.com:tklein1801/url-shortener.git
+
+# Store all values below in the Concourse credential manager. Do not commit them.
+github:
+  private_key: ((vault:github-private-key))
+  # Read pull requests and contents; write commit statuses.
+  status_token: ((vault:github-status-token))
+  # Write repository contents and releases.
+  release_token: ((vault:github-release-token))
+  # Write packages in ghcr.io/tklein1801.
+  registry_token: ((vault:github-registry-token))

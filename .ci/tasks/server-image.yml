@@ -1,0 +1,23 @@
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: concourse/oci-build-task
+    tag: "0.15"
+
+inputs:
+  - name: repo
+
+outputs:
+  - name: image
+
+caches:
+  - path: cache
+
+params:
+  CONTEXT: repo/apps/server
+  IMAGE_PLATFORM: linux/amd64,linux/arm64
+
+run:
+  path: build

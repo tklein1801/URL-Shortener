@@ -1,0 +1,61 @@
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: "1.27.1"
+
+inputs:
+  - name: repo
+
+outputs:
+  - name: artifacts
+  - name: release-metadata
+
+params:
+  RELEASE_PREFIX: branch
+
+run:
+  path: sh
+  args:
+    - -eu
+    - -c
+    - |
+      export GOCACHE=/tmp/go-build
+      export GOMODCACHE=/tmp/go-mod
+      task_root="$(pwd)"
+      artifact_dir="${task_root}/artifacts"
+      metadata_dir="${task_root}/release-metadata"
+      mkdir -p "$GOCACHE" "$GOMODCACHE" "$artifact_dir" "$metadata_dir"
+      sha="$(git -C repo rev-parse HEAD)"
+      commit_time="$(git -C repo show -s --format=%cI HEAD)"
+      timestamp="$(date -u -d "$commit_time" '+%Y%m%dT%H%M%SZ')"
+      version="${RELEASE_PREFIX}-${timestamp}-${sha}"
+
+      cd repo/apps/server
+      GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+        go build -trimpath -ldflags "-s -w" -o "${artifact_dir}/server_linux_amd64" .
+
+      cd ../cli
+      build_cli() {
+        goos="$1"
+        goarch="$2"
+        suffix=""
+        test "$goos" != windows || suffix=.exe
+        output="${artifact_dir}/surl_${version}_${goos}_${goarch}${suffix}"
+        GOWORK=off CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+          go build -trimpath -ldflags "-s -w -X main.version=${version}" -o "$output" .
+      }
+
+      build_cli linux amd64
+      build_cli linux arm64
+      build_cli darwin amd64
+      build_cli darwin arm64
+      build_cli windows amd64
+      build_cli windows arm64
+
+      (cd "$artifact_dir" && sha256sum surl_* > SHA256SUMS)
+      printf '%s\n' "$version" > "${metadata_dir}/name"
+      printf '%s\n' "$version" > "${metadata_dir}/tag"
+      printf '%s\n' "$sha" > "${metadata_dir}/commitish"

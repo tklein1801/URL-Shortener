@@ -1,2 +1,8 @@
-.idea
+.idea/
 .env
+data/
+bin/
+apps/server/server
+apps/cli/surl
+*.exe
+coverage.out
