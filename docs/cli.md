@@ -15,7 +15,7 @@ network commands support `--timeout 10s`. `--help` works without configuration.
 | `surl config set-server <url>` | Validate and save the server URL |
 | `surl config set-token` | Read and save a token without terminal echo |
 | `surl config show` | Display the URL and a masked token |
-| `surl status` | Check liveness, Redis readiness, and authenticated listing |
+| `surl status` | Check liveness, SQLite readiness, and authenticated listing |
 | `surl shorten <url>` | Print the new ID and complete redirect URL |
 | `surl list` | Print ID/target pairs sorted by ID |
 | `surl open <id>` | Launch the default browser and print the redirect URL |

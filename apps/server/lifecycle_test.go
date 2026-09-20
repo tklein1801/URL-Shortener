@@ -1,8 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/alicebob/miniredis/v2"
 	"net"
 	"net/http"
 	"os"
@@ -24,9 +25,10 @@ func TestServerLifecycle(t *testing.T) {
 	if output, err := exec.Command("go", "build", "-o", binary, ".").CombinedOutput(); err != nil {
 		t.Fatalf("build: %v\n%s", err, output)
 	}
-	redis := miniredis.RunT(t)
 	tokenPath := filepath.Join(dir, "data", "master-token")
+	databasePath := filepath.Join(dir, "data", "links.db")
 	var token string
+	var linkID string
 	for iteration := 0; iteration < 2; iteration++ {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
@@ -43,7 +45,7 @@ func TestServerLifecycle(t *testing.T) {
 		cmd.Dir = dir
 		cmd.Stdout = out
 		cmd.Stderr = out
-		cmd.Env = append(os.Environ(), "REDIS_HOST="+redis.Addr(), "REDIS_PW=", "REDIS_DB=0", fmt.Sprintf("PORT=%d", port), "MASTER_TOKEN_FILE="+tokenPath, "SHUTDOWN_TIMEOUT=1s", "BACKEND_TIMEOUT=1s")
+		cmd.Env = append(os.Environ(), "SQLITE_PATH="+databasePath, fmt.Sprintf("PORT=%d", port), "MASTER_TOKEN_FILE="+tokenPath, "SHUTDOWN_TIMEOUT=1s", "BACKEND_TIMEOUT=1s")
 		if err := cmd.Start(); err != nil {
 			out.Close()
 			t.Fatal(err)
@@ -59,10 +61,11 @@ func TestServerLifecycle(t *testing.T) {
 			}
 			out.Close()
 		})
-		client := &http.Client{Timeout: 100 * time.Millisecond}
+		client := &http.Client{Timeout: time.Second}
+		baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
 		deadline := time.Now().Add(5 * time.Second)
 		for {
-			response, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/ready", port))
+			response, err := client.Get(baseURL + "/ready")
 			if err == nil {
 				response.Body.Close()
 				if response.StatusCode == 200 {
@@ -73,6 +76,49 @@ func TestServerLifecycle(t *testing.T) {
 				t.Fatal("server did not become ready")
 			}
 			time.Sleep(20 * time.Millisecond)
+		}
+		current, created, err := auth.Resolve(tokenPath)
+		if err != nil || created {
+			t.Fatal("token not persisted", err)
+		}
+		if iteration == 0 {
+			token = current
+			request, err := http.NewRequest(http.MethodPost, baseURL+"/api/v1/urls", bytes.NewBufferString(`{"url":"https://persisted.example"}`))
+			if err != nil {
+				t.Fatal(err)
+			}
+			request.Header.Set("Authorization", "Bearer "+token)
+			response, err := client.Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var link struct {
+				ID string `json:"id"`
+			}
+			decodeErr := json.NewDecoder(response.Body).Decode(&link)
+			response.Body.Close()
+			if response.StatusCode != http.StatusCreated || decodeErr != nil || link.ID == "" {
+				t.Fatalf("create persisted link: %d %v", response.StatusCode, decodeErr)
+			}
+			linkID = link.ID
+		} else {
+			request, err := http.NewRequest(http.MethodGet, baseURL+"/api/v1/urls", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			request.Header.Set("Authorization", "Bearer "+token)
+			response, err := client.Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var list struct {
+				Data map[string]string `json:"data"`
+			}
+			decodeErr := json.NewDecoder(response.Body).Decode(&list)
+			response.Body.Close()
+			if response.StatusCode != http.StatusOK || decodeErr != nil || list.Data[linkID] != "https://persisted.example" {
+				t.Fatalf("persisted link missing after restart: %d %v %v", response.StatusCode, decodeErr, list.Data)
+			}
 		}
 		if err := cmd.Process.Signal(os.Interrupt); err != nil {
 			t.Fatal(err)
@@ -91,12 +137,7 @@ func TestServerLifecycle(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		current, created, err := auth.Resolve(tokenPath)
-		if err != nil || created {
-			t.Fatal("token not persisted", err)
-		}
 		if iteration == 0 {
-			token = current
 			if strings.Count(string(output), token) != 1 || !strings.Contains(string(output), "WARNING") {
 				t.Fatal("initial token output missing or repeated")
 			}

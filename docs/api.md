@@ -8,7 +8,7 @@ the token is case-sensitive. Invalid or absent credentials return `401` with
 | Method | Path | Auth | Success |
 | --- | --- | --- | --- |
 | GET | `/health` | Public | `200 {"status":"ok"}` |
-| GET | `/ready` | Public | `200 {"status":"ok"}` if Redis responds |
+| GET | `/ready` | Public | `200 {"status":"ok"}` if SQLite responds |
 | GET | `/api/v1/urls` | Bearer | `200` with all links |
 | POST | `/api/v1/urls` | Bearer | `201` with the new link |
 | DELETE | `/api/v1/urls/{id}` | Bearer | `200` with the deleted ID |
@@ -33,7 +33,7 @@ from the configured external base URL; the server does not trust incoming Host
 headers to construct absolute URLs. Only absolute `http` or `https` targets with
 a hostname are accepted. JSON must contain one object with a `url` field and no
 unknown fields. The request body is limited to 1 MiB. IDs have eight URL-safe
-characters. Existing keys cannot be overwritten by creation.
+characters. Existing IDs cannot be overwritten by creation.
 
 ## List and delete
 
@@ -50,7 +50,7 @@ A successful deletion returns:
 ```
 
 Deleting an already missing ID returns `404`. Redirects require no token and
-return `404` only if the key is missing. Legacy Redis IDs remain accessible.
+return `404` only if the ID is missing.
 
 ## Errors
 
@@ -70,6 +70,6 @@ Error responses have `Content-Type: application/json` and this shape:
 | 503 | `unavailable` | Backend failure, timeout, or exhausted collision retries |
 | 500 | `internal_error` | Unexpected handler panic |
 
-`/health` reports process liveness independently of Redis. `/ready` returns
-`503` during a Redis outage. Redis details and credentials are never included in
+`/health` reports process liveness independently of SQLite. `/ready` returns
+`503` if the database is unavailable. Storage details are never included in
 HTTP errors. Removed legacy routes return `404`.

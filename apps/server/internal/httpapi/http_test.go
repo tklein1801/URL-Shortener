@@ -6,17 +6,39 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 	"url-shortener/internal/auth"
 	"url-shortener/internal/links"
+	"url-shortener/internal/sqlitestore"
 )
 
 type repository struct {
 	data        map[string]string
 	err         error
 	sawDeadline bool
+}
+
+func TestReadinessWithClosedSQLite(t *testing.T) {
+	store, err := sqlitestore.Open(context.Background(), filepath.Join(t.TempDir(), "links.db"), time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := links.New(store)
+	handler := New(service, auth.NewVerifier("secret"), store.Ping, time.Second)
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	for path, status := range map[string]int{"/ready": http.StatusServiceUnavailable, "/health": http.StatusOK} {
+		request := httptest.NewRequest(http.MethodGet, path, nil)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != status {
+			t.Fatalf("%s: got %d, want %d", path, response.Code, status)
+		}
+	}
 }
 
 func (m *repository) check(ctx context.Context) error {
@@ -111,7 +133,7 @@ func TestHTTPContract(t *testing.T) {
 	if w = request("DELETE", "/api/v1/urls/"+link.ID, "", "Bearer secret"); w.Code != 200 {
 		t.Fatal(w)
 	}
-	repo.err = errors.New("sensitive Redis error")
+	repo.err = errors.New("sensitive storage error")
 	for _, path := range []string{"/ready", "/r/legacy01", "/api/v1/urls"} {
 		w = request(http.MethodGet, path, "", "Bearer secret")
 		if w.Code != 503 || strings.Contains(w.Body.String(), "sensitive") {

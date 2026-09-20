@@ -14,6 +14,7 @@ COPY --from=build --chown=10001:10001 /out/data /data
 COPY --from=build /out/server /server
 USER 10001:10001
 ENV MASTER_TOKEN_FILE=/data/master-token
+ENV SQLITE_PATH=/data/links.db
 VOLUME ["/data"]
 EXPOSE 3000
 ENTRYPOINT ["/server"]

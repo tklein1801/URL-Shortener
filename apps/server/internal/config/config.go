@@ -7,12 +7,12 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type Config struct {
-	Addr, RedisAddr, RedisPassword, TokenFile                               string
-	RedisDB                                                                 int
+	Addr, SQLitePath, TokenFile                                             string
 	ReadTimeout, WriteTimeout, IdleTimeout, ShutdownTimeout, BackendTimeout time.Duration
 }
 
@@ -31,19 +31,15 @@ func Parse(get func(string) string) (Config, error) {
 		}
 		return fallback
 	}
-	c := Config{RedisAddr: value("REDIS_HOST", "localhost:6379"), RedisPassword: get("REDIS_PW"), TokenFile: value("MASTER_TOKEN_FILE", "./data/master-token")}
+	c := Config{SQLitePath: value("SQLITE_PATH", "./data/links.db"), TokenFile: value("MASTER_TOKEN_FILE", "./data/master-token")}
+	if strings.TrimSpace(c.SQLitePath) == "" || strings.ContainsRune(c.SQLitePath, '\x00') {
+		return c, errors.New("SQLITE_PATH must be a valid file path")
+	}
 	port, err := strconv.Atoi(value("PORT", "3000"))
 	if err != nil || port < 1 || port > 65535 {
 		return c, errors.New("PORT must be between 1 and 65535")
 	}
 	c.Addr = net.JoinHostPort("", strconv.Itoa(port))
-	if _, _, err := net.SplitHostPort(c.RedisAddr); err != nil {
-		return c, errors.New("REDIS_HOST must be host:port")
-	}
-	c.RedisDB, err = strconv.Atoi(value("REDIS_DB", "0"))
-	if err != nil || c.RedisDB < 0 {
-		return c, errors.New("REDIS_DB must be a nonnegative integer")
-	}
 	for _, setting := range []struct {
 		key, fallback string
 		dest          *time.Duration

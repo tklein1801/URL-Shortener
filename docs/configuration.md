@@ -4,23 +4,27 @@
 
 The server loads `.env` from its working directory. Existing environment variables
 take precedence over `.env`; empty optional settings use their defaults. Invalid
-ports, database numbers, addresses, and nonpositive durations fail startup.
+ports, SQLite paths, and nonpositive durations fail startup.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REDIS_HOST` | `localhost:6379` | Redis address as host:port |
-| `REDIS_PW` | empty | Optional Redis password |
-| `REDIS_DB` | `0` | Nonnegative Redis database index |
+| `SQLITE_PATH` | `./data/links.db` | Local SQLite database file |
 | `PORT` | `3000` | HTTP port, 1–65535 |
 | `MASTER_TOKEN_FILE` | `./data/master-token` | Durable master token path |
 | `HTTP_READ_TIMEOUT` | `10s` | Header and request read timeout |
 | `HTTP_WRITE_TIMEOUT` | `15s` | Response write timeout |
 | `HTTP_IDLE_TIMEOUT` | `60s` | Keep-alive idle timeout |
 | `SHUTDOWN_TIMEOUT` | `10s` | Graceful HTTP shutdown deadline |
-| `BACKEND_TIMEOUT` | `5s` | Startup Redis check and request context deadline |
+| `BACKEND_TIMEOUT` | `5s` | SQLite startup, lock, and request deadline |
 
 Duration settings use Go syntax such as `500ms`, `5s`, or `1m`. Relative token
-paths resolve from the server working directory. `CODE` is no longer used.
+and SQLite paths resolve from the server working directory. Redis variables and
+`CODE` are no longer used.
+
+The server creates the SQLite parent directory when needed and the database file
+with mode `0600` on Unix. Use a local filesystem and a dedicated private directory.
+One server instance must own a database file; shared network filesystems and
+multiple replicas are not supported.
 
 ## Master token lifecycle
 

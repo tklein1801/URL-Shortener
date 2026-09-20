@@ -26,8 +26,8 @@ dependencies. No configuration or network access occurs during package init.
 
 - Application tests use a fake repository to check validation, collision retries,
   missing IDs, and cancellation.
-- Adapter tests use miniredis over local TCP, including a deliberately verified
-  multi-page SCAN, legacy entries, SET NX, deletion, and backend failures.
+- Adapter tests use temporary SQLite files and cover schema creation, conflicts,
+  listing, deletion, persistence across reopen, cancellation, and backend failures.
 - Auth tests cover 256-bit token generation, reuse, permissions, malformed files,
   unreadable files, symlinks, failures, and concurrent initial starts.
 - HTTP tests use `httptest` to exercise public and authenticated routes, JSON
@@ -40,9 +40,9 @@ dependencies. No configuration or network access occurs during package init.
   output, masking, help without side effects, and exit codes.
 - The server's end-to-end test builds the real CLI and runs configuration,
   status, shortening, listing, redirecting, opening, and deleting against the
-  full server HTTP stack and miniredis. Linux browser opening uses a local stub.
-- A server process test checks first-start token output, silent token reuse on
-  restart, readiness, and successful shutdown after a termination signal.
+  full server HTTP stack and SQLite. Linux browser opening uses a local stub.
+- A server process test checks first-start token output, silent token reuse,
+  SQLite link persistence across restart, readiness, and graceful shutdown.
 
 Tests need permission to open loopback sockets. `go test -short` skips the CLI
 binary build/end-to-end test. The unreadable-file test requires a non-root Unix

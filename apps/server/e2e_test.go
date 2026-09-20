@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/alicebob/miniredis/v2"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,10 +15,10 @@ import (
 	"url-shortener/internal/auth"
 	"url-shortener/internal/httpapi"
 	"url-shortener/internal/links"
-	"url-shortener/internal/redisstore"
+	"url-shortener/internal/sqlitestore"
 )
 
-// Exercise the real CLI binary against the HTTP stack and Redis adapter.
+// Exercise the real CLI binary against the HTTP stack and SQLite adapter.
 func TestCLIWorkflow(t *testing.T) {
 	if testing.Short() {
 		t.Skip("builds CLI executable")
@@ -37,8 +37,10 @@ func TestCLIWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	redis := miniredis.RunT(t)
-	store := redisstore.New(redis.Addr(), "", 0)
+	store, err := sqlitestore.Open(context.Background(), filepath.Join(dir, "links.db"), time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer store.Close()
 	server := httptest.NewServer(httpapi.New(links.New(store), auth.NewVerifier(token), store.Ping, time.Second))
 	defer server.Close()

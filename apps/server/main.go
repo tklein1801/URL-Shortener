@@ -13,7 +13,7 @@ import (
 	"url-shortener/internal/config"
 	"url-shortener/internal/httpapi"
 	"url-shortener/internal/links"
-	"url-shortener/internal/redisstore"
+	"url-shortener/internal/sqlitestore"
 )
 
 func run() error {
@@ -28,14 +28,13 @@ func run() error {
 	if created {
 		fmt.Printf("A new master token was generated.\nWARNING: This token grants full management access.\nStore this token securely. It will not be printed again:\n\n%s\n\nToken file: %s\n", token, c.TokenFile)
 	}
-	store := redisstore.New(c.RedisAddr, c.RedisPassword, c.RedisDB)
-	defer store.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), c.BackendTimeout)
-	err = store.Ping(ctx)
+	store, err := sqlitestore.Open(ctx, c.SQLitePath, c.BackendTimeout)
 	cancel()
 	if err != nil {
-		return errors.New("Redis startup check failed")
+		return errors.New("SQLite startup check failed")
 	}
+	defer store.Close()
 	server := &http.Server{Addr: c.Addr, Handler: httpapi.New(links.New(store), auth.NewVerifier(token), store.Ping, c.BackendTimeout), ReadHeaderTimeout: c.ReadTimeout, ReadTimeout: c.ReadTimeout, WriteTimeout: c.WriteTimeout, IdleTimeout: c.IdleTimeout}
 	signals, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
