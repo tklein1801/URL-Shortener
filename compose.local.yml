@@ -17,10 +17,10 @@ services:
       SHUTDOWN_TIMEOUT: 10s
       BACKEND_TIMEOUT: 5s
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     volumes:
-      - sqlite-data:/data
+      - service-data:/data
 
 volumes:
-  sqlite-data:
-    name: url-shortener-sqlite-data
+  service-data:
+    name: url-shortener-service-data
