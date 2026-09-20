@@ -1,5 +1,4 @@
 platform: linux
-user: "65532"
 
 image_resource:
   type: registry-image
@@ -23,10 +22,12 @@ run:
     - -eu
     - -c
     - |
-      export HOME=/tmp/home
       export GOCACHE=/tmp/go-build
       export GOMODCACHE=/tmp/go-mod
-      mkdir -p "$HOME" "$GOCACHE" "$GOMODCACHE" artifacts release-metadata
+      task_root="$(pwd)"
+      artifact_dir="${task_root}/artifacts"
+      metadata_dir="${task_root}/release-metadata"
+      mkdir -p "$GOCACHE" "$GOMODCACHE" "$artifact_dir" "$metadata_dir"
       sha="$(git -C repo rev-parse HEAD)"
       commit_time="$(git -C repo show -s --format=%cI HEAD)"
       timestamp="$(date -u -d "$commit_time" '+%Y%m%dT%H%M%SZ')"
@@ -34,7 +35,7 @@ run:
 
       cd repo/apps/server
       GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-        go build -trimpath -ldflags "-s -w" -o "../../artifacts/server_linux_amd64" .
+        go build -trimpath -ldflags "-s -w" -o "${artifact_dir}/server_linux_amd64" .
 
       cd ../cli
       build_cli() {
@@ -42,7 +43,7 @@ run:
         goarch="$2"
         suffix=""
         test "$goos" != windows || suffix=.exe
-        output="../../artifacts/surl_${version}_${goos}_${goarch}${suffix}"
+        output="${artifact_dir}/surl_${version}_${goos}_${goarch}${suffix}"
         GOWORK=off CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
           go build -trimpath -ldflags "-s -w -X main.version=${version}" -o "$output" .
       }
@@ -54,8 +55,7 @@ run:
       build_cli windows amd64
       build_cli windows arm64
 
-      cd ../..
-      (cd artifacts && sha256sum surl_* > SHA256SUMS)
-      printf '%s\n' "$version" > release-metadata/name
-      printf '%s\n' "$version" > release-metadata/tag
-      printf '%s\n' "$sha" > release-metadata/commitish
+      (cd "$artifact_dir" && sha256sum surl_* > SHA256SUMS)
+      printf '%s\n' "$version" > "${metadata_dir}/name"
+      printf '%s\n' "$version" > "${metadata_dir}/tag"
+      printf '%s\n' "$sha" > "${metadata_dir}/commitish"

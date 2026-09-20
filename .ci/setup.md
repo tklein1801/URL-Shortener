@@ -12,4 +12,6 @@ fly -t ci unpause-pipeline -p url-shortener-ci
 
 The credential manager must provide `github.private_key`,
 `github.status_token`, and `github.release_token`. The parent pipeline creates
-and archives branch pipeline instances automatically.
+and archives branch pipeline instances automatically. It also checks open pull
+requests targeting `main` and reports `concourse/pr-main`; the status token must
+be able to read pull requests and repository contents and write commit statuses.

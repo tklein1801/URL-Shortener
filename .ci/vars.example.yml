@@ -7,5 +7,7 @@ git:
 # Store all values below in the Concourse credential manager. Do not commit them.
 github:
   private_key: ((vault:github-private-key))
+  # Read pull requests and contents; write commit statuses.
   status_token: ((vault:github-status-token))
+  # Write repository contents and releases.
   release_token: ((vault:github-release-token))

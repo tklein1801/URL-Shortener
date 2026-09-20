@@ -3,6 +3,11 @@ resource_types:
     type: registry-image
     source:
       repository: pix4d/cogito@sha256:a78e2cbc21785efb4a078fd26ae1c2ed2737bb6ee7498d899610fd7b1828fce1
+  - name: pull-request
+    type: registry-image
+    source:
+      repository: teliaoss/github-pr-resource
+      tag: latest
   - name: github-release
     type: registry-image
     source:
@@ -42,6 +47,15 @@ resources:
       repo: ((repo_name))
       access_token: ((github.status_token))
       context_prefix: concourse
+
+  - name: pr-main
+    type: pull-request
+    check_every: 1m
+    icon: source-pull
+    source:
+      repository: ((repo_owner))/((repo_name))
+      access_token: ((github.status_token))
+      base_branch: main
 
   - name: gh-release
     type: github-release
@@ -160,3 +174,74 @@ jobs:
       put: gh-status
       inputs: [repo]
       params: { state: abort, context: ci }
+
+  - name: pr-main
+    public: true
+    serial: true
+    plan:
+      - get: pr-main
+        trigger: true
+        version: every
+        params:
+          integration_tool: merge
+      - do:
+          - put: pr-main-status
+            resource: pr-main
+            inputs: [pr-main]
+            params:
+              path: pr-main
+              status: pending
+              base_context: concourse
+              context: pr-main
+            get_params: { skip_download: true }
+          - get: golang
+          - task: checks
+            file: pr-main/.ci/tasks/checks.yml
+            image: golang
+            input_mapping: { repo: pr-main }
+          - task: build
+            file: pr-main/.ci/tasks/build.yml
+            image: golang
+            input_mapping: { repo: pr-main }
+            params:
+              RELEASE_PREFIX: pr
+        on_success:
+          put: pr-main-status
+          resource: pr-main
+          inputs: [pr-main]
+          params:
+            path: pr-main
+            status: success
+            base_context: concourse
+            context: pr-main
+          get_params: { skip_download: true }
+        on_failure:
+          put: pr-main-status
+          resource: pr-main
+          inputs: [pr-main]
+          params:
+            path: pr-main
+            status: failure
+            base_context: concourse
+            context: pr-main
+          get_params: { skip_download: true }
+        on_error:
+          put: pr-main-status
+          resource: pr-main
+          inputs: [pr-main]
+          params:
+            path: pr-main
+            status: error
+            base_context: concourse
+            context: pr-main
+          get_params: { skip_download: true }
+        on_abort:
+          put: pr-main-status
+          resource: pr-main
+          inputs: [pr-main]
+          params:
+            path: pr-main
+            status: error
+            base_context: concourse
+            context: pr-main
+          get_params: { skip_download: true }

@@ -1,5 +1,4 @@
 platform: linux
-user: "65532"
 
 image_resource:
   type: registry-image
@@ -12,14 +11,15 @@ inputs:
 
 run:
   path: sh
+  user: "65532"
   args:
     - -eu
     - -c
     - |
-      export HOME=/tmp/home
+      export CGO_ENABLED=1
       export GOCACHE=/tmp/go-build
       export GOMODCACHE=/tmp/go-mod
-      mkdir -p "$HOME" "$GOCACHE" "$GOMODCACHE"
+      mkdir -p "$GOCACHE" "$GOMODCACHE"
       cd repo
       find apps/server apps/cli -type f -name '*.go' -print | while IFS= read -r file; do
         normalized="/tmp/gofmt-$(printf '%s' "$file" | tr '/\\' '__')"

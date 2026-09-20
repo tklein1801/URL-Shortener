@@ -53,12 +53,16 @@ on the target operating system when changing those integrations.
 
 Concourse pipelines under [`.ci/`](../.ci/) run formatting checks, `go vet`,
 race-enabled tests, and both application builds for `main`, `feat/*`,
-`feature/*`, and `fix/*` branches. The main pipeline then cross-compiles the
-CLI for Linux, macOS, and Windows on amd64 and arm64 and publishes a
-deterministic GitHub prerelease for every successful commit.
+`feature/*`, `fix/*`, and `refactor/*` branches. The main pipeline then
+cross-compiles the CLI for Linux, macOS, and Windows on amd64 and arm64 and
+publishes a deterministic GitHub prerelease for every successful commit.
 
-Every successful `main` commit publishes a deterministic prerelease. The version is embedded
-using `-ldflags "-X main.version=<tag>"`. GitHub and webhook credentials are
-provided through the Concourse credential manager. See [`.ci/README.md`](../.ci/README.md)
-for pipeline installation, worker requirements, Vault variables, and release
+Pull requests targeting `main` are tested as a merge with the current target
+branch. The PR job runs the same checks and builds and reports the result through
+the `concourse/pr-main` GitHub status context.
+
+Every successful `main` commit publishes a deterministic prerelease. The
+version is embedded in each CLI binary. GitHub credentials are provided through
+the Concourse credential manager. See [`.ci/README.md`](../.ci/README.md) for
+pipeline installation, worker requirements, Vault variables, and release
 operations.
