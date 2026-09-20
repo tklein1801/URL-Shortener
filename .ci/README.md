@@ -25,11 +25,11 @@ protection.
 
 ## Releases
 
-Each successful main commit creates or updates a GitHub prerelease. Its tag is
-deterministic and has the form:
+Each successful main commit creates or updates a full GitHub release. Its name
+and tag are identical, deterministic, and have the form:
 
 ```text
-main-YYYYMMDDTHHMMSSZ-<full-commit-sha>
+surl-YYYYMMDDTHHMMSSZ-<12-character-commit-sha>
 ```
 
 The release contains six `surl` binaries and `SHA256SUMS`. It also publishes a

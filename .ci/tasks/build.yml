@@ -13,9 +13,6 @@ outputs:
   - name: artifacts
   - name: release-metadata
 
-params:
-  RELEASE_PREFIX: branch
-
 run:
   path: sh
   args:
@@ -29,9 +26,10 @@ run:
       metadata_dir="${task_root}/release-metadata"
       mkdir -p "$GOCACHE" "$GOMODCACHE" "$artifact_dir" "$metadata_dir"
       sha="$(git -C repo rev-parse HEAD)"
+      short_sha="$(git -C repo rev-parse --short=12 HEAD)"
       commit_time="$(git -C repo show -s --format=%cI HEAD)"
       timestamp="$(date -u -d "$commit_time" '+%Y%m%dT%H%M%SZ')"
-      version="${RELEASE_PREFIX}-${timestamp}-${sha}"
+      version="surl-${timestamp}-${short_sha}"
 
       cd repo/apps/server
       GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \

@@ -10,8 +10,8 @@ docker pull ghcr.io/tklein1801/url-shortener-server:latest
 ```
 
 For a reproducible deployment, use the immutable release tag shown on the
-corresponding GitHub prerelease. It has the form
-`main-YYYYMMDDTHHMMSSZ-<full-commit-sha>`.
+corresponding GitHub release. It has the form
+`surl-YYYYMMDDTHHMMSSZ-<12-character-commit-sha>`.
 
 Build from the server directory (or use it as the build context):
 

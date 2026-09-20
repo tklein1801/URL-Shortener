@@ -66,8 +66,8 @@ resources:
       owner: ((repo_owner))
       repository: ((repo_name))
       access_token: ((github.release_token))
-      release: false
-      pre_release: true
+      release: true
+      pre_release: false
 
   - name: server-image
     type: registry-image
@@ -136,8 +136,6 @@ jobs:
         file: repo/.ci/tasks/build.yml
         image: golang
         input_mapping: { repo: repo }
-        params:
-          RELEASE_PREFIX: main
       - do:
           - put: gh-status
             inputs: [repo]
@@ -227,8 +225,6 @@ jobs:
             file: pr-main/.ci/tasks/build.yml
             image: golang
             input_mapping: { repo: pr-main }
-            params:
-              RELEASE_PREFIX: pr
         on_success:
           put: pr-main-status
           resource: pr-main
